@@ -1,7 +1,13 @@
 <?php
 
-use App\Http\Controllers\ProfileController;
+use App\Models\Turbidity;
+use App\Models\PakanTimer;
+use Illuminate\Support\Carbon;
+use App\Models\TurbidityTreshold;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\PakanController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\TurbidityController;
 
 /*
 |--------------------------------------------------------------------------
@@ -19,8 +25,24 @@ Route::get('/', function () {
 });
 
 Route::get('/dashboard', function () {
-    return view('dashboard');
+    $datatimer = PakanTimer::where('time','>',Carbon::now())->orderBy('time','ASC')->get();
+    $turbidity = Turbidity::latest()->first();
+    $turbiditystatus = "Normal";
+    $tturbidity = \App\Models\TurbidityTreshold::latest()->first();
+    if($turbiditystatus < $tturbidity->tturbidity){
+        $turbiditystatus = "Keruh";
+    }
+    return view('dashboard',[
+        'timer'=>$datatimer,
+        'turbidity'=>$turbidity,
+        'turbiditystatus'=> $turbiditystatus,
+        'tturbidity'=>$tturbidity
+    ]);
 })->middleware(['auth', 'verified'])->name('dashboard');
+
+Route::get('/dashboard/timer-setting', [PakanController::class, 'create'])->name('tambah-timer');
+Route::post('/dashboard/timer-setting', [PakanController::class, 'insert'])->name('tambah-timer-post');
+Route::post('/dashboard/set-turbidity', [TurbidityController::class, 'setTreshold'])->name('tambah-timer-post');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
